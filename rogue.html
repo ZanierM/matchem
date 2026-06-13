@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rogue</title>
+<style>
+  :root{
+    --bg:#080f0c;
+    --surface:#0e1a14;
+    --surface-2:#162211;
+    --border:#1e3828;
+    --accent:#34d399;
+    --accent-dim:#059669;
+    --text:#e0fff2;
+    --muted:#5e9478;
+    --red:#f87171;
+    --yellow:#fbbf24;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    background:radial-gradient(1000px 500px at 50% -8%,#0d2e1c 0%,var(--bg) 65%);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    display:flex;flex-direction:column;align-items:center;
+    min-height:100%;
+    padding:18px 14px 40px;
+  }
+
+  /* ---- header ---- */
+  header{display:flex;flex-direction:column;align-items:center;gap:5px;margin-bottom:20px}
+  .logo{
+    font-size:clamp(40px,11vw,58px);font-weight:900;letter-spacing:.2em;text-transform:uppercase;
+    background:linear-gradient(135deg,#a7f3d0 0%,var(--accent) 50%,var(--accent-dim) 100%);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+    filter:drop-shadow(0 0 20px rgba(52,211,153,.45));
+  }
+  .tagline{color:var(--muted);font-size:13px;letter-spacing:.04em;text-align:center}
+  .daybadge{
+    margin-top:6px;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--accent);background:rgba(52,211,153,.1);
+    border:1px solid rgba(52,211,153,.28);padding:4px 13px;border-radius:999px;
+  }
+
+  .wrap{width:100%;max-width:520px}
+
+  /* ---- progress ---- */
+  .progress-bar{display:flex;gap:6px;margin-bottom:16px}
+  .pip{flex:1;height:5px;border-radius:3px;background:var(--surface-2);transition:background .4s}
+  .pip.active{background:var(--yellow)}
+  .pip.right{background:var(--accent)}
+  .pip.wrong{background:var(--red)}
+
+  /* ---- round meta ---- */
+  .round-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .round-lbl{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+  .diff-pill{
+    font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+    color:var(--accent);background:rgba(52,211,153,.1);
+    border:1px solid rgba(52,211,153,.22);padding:3px 10px;border-radius:999px;
+  }
+
+  /* ---- tiles ---- */
+  .tiles{display:flex;flex-wrap:wrap;gap:9px;justify-content:center;margin-bottom:15px}
+  .tile{
+    background:#d1fae5;color:#052e16;
+    border:none;border-radius:var(--radius);
+    flex:1 1 calc(20% - 8px);min-width:72px;max-width:140px;
+    min-height:80px;padding:8px 5px;
+    font-weight:800;font-size:14px;letter-spacing:.02em;text-transform:uppercase;
+    cursor:pointer;user-select:none;font-family:inherit;
+    word-break:break-word;line-height:1.15;
+    box-shadow:0 2px 0 rgba(0,0,0,.45);
+    transition:transform .12s, background .15s, color .15s, outline .1s;
+  }
+  .tile.lg{font-size:12px}
+  .tile.xl{font-size:10px;letter-spacing:0}
+  .tile:active{transform:scale(.96)}
+  .tile.selected{
+    background:#052e16;color:var(--accent);
+    outline:2px solid var(--accent);outline-offset:-2px;
+    transform:scale(.97);
+  }
+  .tile.is-correct{background:var(--accent);color:#031a0d;pointer-events:none;transform:scale(1.04)}
+  .tile.is-wrong{background:var(--red);color:#fff;pointer-events:none;animation:shake .35s}
+  .tile.faded{background:#162b1e;color:var(--muted);box-shadow:none;pointer-events:none;transform:scale(.97)}
+  .tile.locked{pointer-events:none}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-7px)}75%{transform:translateX(7px)}}
+
+  /* ---- result card ---- */
+  .result-card{
+    background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;
+    display:none;animation:slideIn .35s cubic-bezier(.2,1.1,.4,1);
+  }
+  .result-card.show{display:block}
+  @keyframes slideIn{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
+  .result-verdict{font-size:17px;font-weight:900;letter-spacing:.03em;margin-bottom:6px}
+  .result-verdict.right{color:var(--accent)}
+  .result-verdict.wrong{color:var(--red)}
+  .result-body{font-size:14px;line-height:1.55;color:var(--muted)}
+  .result-body strong{color:var(--text)}
+
+  /* ---- score dots ---- */
+  .score-dots{display:flex;justify-content:center;gap:10px;margin:14px 0 6px}
+  .dot{
+    width:14px;height:14px;border-radius:50%;
+    background:var(--surface-2);border:1px solid var(--border);transition:all .4s;
+  }
+  .dot.right{background:var(--accent);border-color:var(--accent);box-shadow:0 0 8px rgba(52,211,153,.6)}
+  .dot.wrong{background:var(--red);border-color:var(--red)}
+
+  /* ---- buttons ---- */
+  .btn{
+    font-family:inherit;font-size:14px;font-weight:800;letter-spacing:.04em;
+    padding:13px 22px;border-radius:var(--radius);cursor:pointer;
+    border:1.5px solid var(--border);background:transparent;color:var(--text);
+    transition:all .14s;width:100%;display:block;
+  }
+  .btn:disabled{opacity:.28;cursor:default}
+  .btn-primary{
+    background:linear-gradient(135deg,var(--accent),var(--accent-dim));
+    border-color:transparent;color:#031a0d;
+  }
+  .btn-primary:not(:disabled):active{transform:scale(.97)}
+  .btn-next{margin-top:8px;display:none}
+
+  /* ---- toast ---- */
+  #toast{
+    position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-90px);
+    background:var(--text);color:#080f0c;font-weight:800;font-size:14px;
+    padding:10px 22px;border-radius:999px;box-shadow:0 6px 24px rgba(0,0,0,.55);
+    transition:transform .3s cubic-bezier(.2,1.2,.4,1);z-index:50;pointer-events:none;
+    max-width:90vw;text-align:center;
+  }
+  #toast.show{transform:translateX(-50%) translateY(0)}
+
+  /* ---- end panel ---- */
+  #endPanel{
+    display:none;width:100%;max-width:520px;
+    background:var(--surface);border:1px solid var(--border);border-radius:20px;
+    padding:28px 22px;text-align:center;
+    animation:popIn .48s cubic-bezier(.2,1.3,.4,1);
+  }
+  @keyframes popIn{from{transform:scale(.84);opacity:0}to{transform:scale(1);opacity:1}}
+  #endPanel h2{font-size:26px;font-weight:900;margin-bottom:6px}
+  #endPanel .sub{color:var(--muted);font-size:14px;margin-bottom:10px;line-height:1.5}
+  .score-big{font-size:62px;font-weight:900;
+    filter:drop-shadow(0 0 16px rgba(52,211,153,.45));margin:8px 0 4px}
+  .score-lbl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.14em;font-weight:700;margin-bottom:14px}
+  .emoji-row{font-size:26px;letter-spacing:5px;margin:10px 0 16px}
+  .stats-row{display:flex;justify-content:center;gap:30px;margin:10px 0 18px}
+  .stat{display:flex;flex-direction:column;align-items:center}
+  .stat b{font-size:28px;font-weight:900;color:var(--accent)}
+  .stat span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:2px}
+  .cdown-lbl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;font-weight:700}
+  #countdown{font-size:36px;font-weight:900;letter-spacing:.06em;font-variant-numeric:tabular-nums;margin-top:4px}
+  .end-btns{display:flex;justify-content:center;gap:8px;margin-top:18px;flex-wrap:wrap}
+  .end-btns .btn{width:auto;font-size:13px;padding:10px 18px}
+
+  footer{margin-top:auto;padding-top:28px;color:#1a3326;font-size:12px}
+
+  @media(max-width:400px){
+    .tile{font-size:12px;min-height:70px;min-width:60px}
+    .tile.lg{font-size:11px}.tile.xl{font-size:9px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Rogue</div>
+  <div class="tagline">Four belong. One doesn't. Find it.</div>
+  <div class="daybadge" id="dayBadge">Day #1</div>
+</header>
+
+<div class="wrap" id="mainWrap">
+  <div class="progress-bar" id="progressBar"></div>
+  <div class="round-meta">
+    <span class="round-lbl" id="roundLbl">Round 1 of 5</span>
+    <span class="diff-pill" id="diffPill">Warm Up</span>
+  </div>
+
+  <div class="tiles" id="tilesGrid"></div>
+
+  <div class="result-card" id="resultCard">
+    <div class="result-verdict" id="resultVerdict"></div>
+    <div class="result-body" id="resultBody"></div>
+  </div>
+
+  <button class="btn btn-primary" id="confirmBtn" disabled>That's the odd one</button>
+  <button class="btn btn-next" id="nextBtn">Next round →</button>
+
+  <div class="score-dots" id="scoreDots"></div>
+</div>
+
+<div id="endPanel">
+  <h2 id="endTitle"></h2>
+  <p class="sub" id="endSub"></p>
+  <div class="score-big" id="scoreBig"></div>
+  <div class="score-lbl">out of 5</div>
+  <div class="emoji-row" id="emojiRow"></div>
+  <div class="stats-row">
+    <div class="stat"><b id="stPlayed">0</b><span>Played</span></div>
+    <div class="stat"><b id="stWins">0</b><span>Perfect</span></div>
+    <div class="stat"><b id="stAvg">—</b><span>Avg score</span></div>
+  </div>
+  <div class="cdown-lbl">Next puzzle in</div>
+  <div id="countdown">--:--:--</div>
+  <div class="end-btns">
+    <button class="btn btn-primary" id="copyBtn">Copy result</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+<footer>Rogue — a daily odd-one-out game</footer>
+
+<script>
+/* ====== DIFFICULTY LABELS ====== */
+const DIFF = ["Warm Up","Getting There","Mid-Game","Tricky","Head-Scratcher"];
+
+/* ====== 30 DAYS × 5 ROUNDS ======
+   Each round: { w:[5 words], odd:0-4, link:"what the 4 share", note:"why the odd one is out" }
+======================================*/
+const PUZZLES = [
+/* Day 1 */[
+  {w:["BANANA","APPLE","CARROT","GRAPE","MANGO"],odd:2,link:"fruits",note:"Carrot is a vegetable"},
+  {w:["PIANO","GUITAR","FLUTE","DRUMS","VIOLIN"],odd:3,link:"string or wind instruments",note:"Drums is a percussion instrument"},
+  {w:["PARIS","LONDON","BERLIN","SYDNEY","ROME"],odd:3,link:"European capital cities",note:"Sydney is in Australia"},
+  {w:["GOLD","SILVER","BRONZE","COPPER","PLATINUM"],odd:2,link:"pure chemical elements",note:"Bronze is an alloy of copper and tin — not a pure element"},
+  {w:["SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER","JANUARY"],odd:4,link:"months whose names end in -ber",note:"January doesn't end in -ber"},
+],
+/* Day 2 */[
+  {w:["DOG","CAT","HAMSTER","GOLDFISH","RABBIT"],odd:3,link:"common furry mammals kept as pets",note:"Goldfish is a fish, not a mammal"},
+  {w:["SHARK","WHALE","DOLPHIN","SEAL","SALMON"],odd:4,link:"marine mammals",note:"Salmon is a fish, not a mammal"},
+  {w:["ENGLAND","FRANCE","SPAIN","BRAZIL","ITALY"],odd:3,link:"European countries",note:"Brazil is in South America"},
+  {w:["MERCURY","VENUS","MARS","SATURN","EARTH"],odd:4,link:"planets named after Roman gods",note:"Earth is not named after a Roman god"},
+  {w:["AUNT","UNCLE","COUSIN","NIECE","NEPHEW"],odd:2,link:"gender-specific family terms",note:"Cousin is gender neutral — the rest are specifically male or female"},
+],
+/* Day 3 */[
+  {w:["LION","TIGER","LEOPARD","HORSE","CHEETAH"],odd:3,link:"big cats",note:"A horse is an equine, not a cat at all"},
+  {w:["RUGBY","FOOTBALL","HOCKEY","BASEBALL","GOLF"],odd:4,link:"team sports",note:"Golf is an individual sport"},
+  {w:["ATLANTIC","PACIFIC","INDIAN","ARCTIC","SAHARA"],odd:4,link:"oceans",note:"The Sahara is a desert, not an ocean"},
+  {w:["SQUARE","TRIANGLE","CIRCLE","HEXAGON","CUBE"],odd:4,link:"2D shapes",note:"A cube is 3D — all the others are flat shapes"},
+  {w:["COBRA","PYTHON","VIPER","MAMBA","GECKO"],odd:4,link:"snakes",note:"A gecko is a lizard"},
+],
+/* Day 4 */[
+  {w:["RED","ORANGE","YELLOW","GREEN","BLACK"],odd:4,link:"colours of the rainbow",note:"Black is not a colour of the rainbow"},
+  {w:["SALMON","TUNA","TROUT","COD","DOLPHIN"],odd:4,link:"fish",note:"A dolphin is a marine mammal, not a fish"},
+  {w:["JUPITER","SATURN","URANUS","NEPTUNE","MARS"],odd:4,link:"gas giant planets",note:"Mars is a rocky terrestrial planet"},
+  {w:["ROBIN","SPARROW","EAGLE","PENGUIN","HAWK"],odd:3,link:"birds that can fly",note:"Penguins are flightless"},
+  {w:["PLATO","ARISTOTLE","SOCRATES","DESCARTES","PYTHAGORAS"],odd:3,link:"ancient Greek philosophers",note:"Descartes was a 17th-century French philosopher"},
+],
+/* Day 5 */[
+  {w:["MILK","JUICE","WATER","COLA","BREAD"],odd:4,link:"drinks",note:"Bread is solid food, not a drink"},
+  {w:["SPAIN","ITALY","GREECE","FRANCE","PORTUGAL"],odd:4,link:"countries that border the Mediterranean Sea",note:"Portugal only borders the Atlantic Ocean"},
+  {w:["HAMMER","SCREWDRIVER","WRENCH","DRILL","LADLE"],odd:4,link:"tools from a toolbox",note:"A ladle belongs in the kitchen"},
+  {w:["BEETHOVEN","MOZART","BACH","HANDEL","PICASSO"],odd:4,link:"classical composers",note:"Picasso was a painter, not a composer"},
+  {w:["JUPITER","MARS","SATURN","VENUS","THOR"],odd:4,link:"Roman gods",note:"Thor is a Norse god"},
+],
+/* Day 6 */[
+  {w:["ROSE","TULIP","DAISY","SUNFLOWER","OAK"],odd:4,link:"flowers",note:"An oak is a tree, not a flower"},
+  {w:["FRANCE","GERMANY","ITALY","SPAIN","TURKEY"],odd:4,link:"countries entirely within Europe",note:"Turkey spans both Europe and Asia"},
+  {w:["MARS","SNICKERS","TWIX","BOUNTY","OREO"],odd:4,link:"chocolate bars",note:"An Oreo is a biscuit, not a chocolate bar"},
+  {w:["ALPHA","BRAVO","CHARLIE","DELTA","ZORRO"],odd:4,link:"NATO phonetic alphabet letters",note:"Zorro is not in the NATO alphabet — Z is Zulu"},
+  {w:["DARWIN","NEWTON","EINSTEIN","HAWKING","NAPOLEON"],odd:4,link:"famous scientists",note:"Napoleon Bonaparte was a military general and emperor, not a scientist"},
+],
+/* Day 7 */[
+  {w:["SWIMMING","CYCLING","RUNNING","CHESS","ROWING"],odd:3,link:"Olympic sports",note:"Chess is not an Olympic sport"},
+  {w:["PARIS","TOKYO","LONDON","MADRID","BEIJING"],odd:3,link:"cities that have hosted the Summer Olympics",note:"Madrid has bid for the Olympics but never hosted"},
+  {w:["SWORD","SHIELD","LANCE","BOW","PISTOL"],odd:4,link:"medieval weapons",note:"Pistols were not used in the medieval period"},
+  {w:["SOPRANO","MEZZO","TENOR","BARITONE","CELLO"],odd:4,link:"singing voice types",note:"A cello is an instrument, not a singing voice"},
+  {w:["PLUTO","CERES","ERIS","MAKEMAKE","MARS"],odd:4,link:"dwarf planets",note:"Mars is a full planet — Pluto, Ceres, Eris and Makemake are dwarf planets"},
+],
+/* Day 8 */[
+  {w:["PYTHON","JAVA","FRENCH","RUBY","SWIFT"],odd:2,link:"programming languages",note:"French is a spoken language, not a programming language"},
+  {w:["ATLANTIC","PACIFIC","INDIAN","ARCTIC","CASPIAN"],odd:4,link:"oceans",note:"The Caspian is technically a lake, not one of Earth's oceans"},
+  {w:["BEETHOVEN","MOZART","CHOPIN","BACH","SINATRA"],odd:4,link:"classical composers",note:"Frank Sinatra was a 20th-century pop and jazz singer"},
+  {w:["HYDROGEN","OXYGEN","NITROGEN","CARBON","WATER"],odd:4,link:"chemical elements",note:"Water (H₂O) is a compound made of elements, not an element itself"},
+  {w:["PARIS","HELEN","ACHILLES","ODYSSEUS","JULIUS"],odd:4,link:"characters from Greek mythology",note:"Julius Caesar was a real Roman statesman, not a figure from Greek myth"},
+],
+/* Day 9 */[
+  {w:["POTATO","CARROT","TURNIP","PARSNIP","TOMATO"],odd:4,link:"root vegetables",note:"A tomato grows above ground on a vine — botanically it's a fruit"},
+  {w:["BASKETBALL","VOLLEYBALL","HANDBALL","FOOTBALL","BADMINTON"],odd:4,link:"sports played with a ball",note:"Badminton uses a shuttlecock, not a ball"},
+  {w:["BERLIN","PARIS","ROME","LONDON","CAIRO"],odd:4,link:"European capital cities",note:"Cairo is the capital of Egypt, in Africa"},
+  {w:["GOLD","SILVER","IRON","COPPER","MERCURY"],odd:4,link:"metals that are solid at room temperature",note:"Mercury is the only metal that is liquid at room temperature"},
+  {w:["METAPHOR","SIMILE","ALLITERATION","HAIKU","ONOMATOPOEIA"],odd:3,link:"figures of speech",note:"A haiku is a type of poem, not a literary device"},
+],
+/* Day 10 */[
+  {w:["HAMMER","CHISEL","SPATULA","WRENCH","SCREWDRIVER"],odd:2,link:"tools from a toolbox",note:"A spatula belongs in the kitchen"},
+  {w:["OAK","ELM","PINE","BAMBOO","BIRCH"],odd:3,link:"trees",note:"Bamboo is a grass, not a tree"},
+  {w:["NILE","AMAZON","MISSISSIPPI","THAMES","GOBI"],odd:4,link:"rivers",note:"The Gobi is a desert in Asia, not a river"},
+  {w:["VIOLIN","CELLO","HARP","GUITAR","FLUTE"],odd:4,link:"string instruments",note:"A flute is a woodwind instrument"},
+  {w:["IAMBIC","TROCHAIC","DACTYLIC","SPONDAIC","LIMERICK"],odd:4,link:"metrical feet in poetry",note:"A limerick is a type of poem, not a metrical foot"},
+],
+/* Day 11 */[
+  {w:["EAGLE","OWL","FALCON","HAWK","OSTRICH"],odd:4,link:"birds of prey",note:"An ostrich is a large flightless bird, not a bird of prey"},
+  {w:["LEMON","LIME","GRAPEFRUIT","ORANGE","STRAWBERRY"],odd:4,link:"citrus fruits",note:"Strawberries are not citrus"},
+  {w:["RHINE","DANUBE","THAMES","NILE","SEINE"],odd:3,link:"rivers in Europe",note:"The Nile flows through Africa"},
+  {w:["BRONZE","BRASS","PEWTER","STEEL","SILVER"],odd:4,link:"metal alloys",note:"Silver is a pure element — bronze, brass, pewter and steel are all alloys"},
+  {w:["PLATO","ARISTOTLE","DESCARTES","SOCRATES","ARCHIMEDES"],odd:2,link:"ancient Greek thinkers",note:"René Descartes was a 17th-century French philosopher"},
+],
+/* Day 12 */[
+  {w:["TUNA","SALMON","COD","SHARK","CRAB"],odd:4,link:"fish",note:"A crab is a crustacean, not a fish"},
+  {w:["ROME","FLORENCE","MILAN","NAPLES","ATHENS"],odd:4,link:"cities in Italy",note:"Athens is the capital of Greece"},
+  {w:["EMERALD","RUBY","DIAMOND","TOPAZ","MARBLE"],odd:4,link:"precious or semi-precious gemstones",note:"Marble is a type of rock, not a gemstone"},
+  {w:["TYPHOON","HURRICANE","TORNADO","MONSOON","VOLCANO"],odd:4,link:"weather phenomena",note:"A volcano is a geological structure, not a weather event"},
+  {w:["SONNET","ODE","HAIKU","LIMERICK","PROSE"],odd:4,link:"types of poetry",note:"Prose is ordinary non-verse writing — it is not a poetry form"},
+],
+/* Day 13 */[
+  {w:["TRIANGLE","SQUARE","PENTAGON","CIRCLE","CUBE"],odd:4,link:"2D shapes",note:"A cube is a 3D object, not a flat shape"},
+  {w:["COBALT","AZURE","INDIGO","NAVY","CRIMSON"],odd:4,link:"shades of blue",note:"Crimson is a deep red"},
+  {w:["POLO","DRESSAGE","SHOWJUMPING","EVENTING","ARCHERY"],odd:4,link:"equestrian sports (involving horses)",note:"Archery doesn't involve horses"},
+  {w:["PROTON","NEUTRON","ELECTRON","QUARK","ATOM"],odd:4,link:"subatomic particles",note:"An atom is made of subatomic particles — it is not one itself"},
+  {w:["HELIUM","NEON","ARGON","KRYPTON","NITROGEN"],odd:4,link:"noble gases (Group 18)",note:"Nitrogen is in Group 15 — it is not a noble gas"},
+],
+/* Day 14 */[
+  {w:["ROBIN","SPARROW","PIGEON","FLAMINGO","SWALLOW"],odd:3,link:"small common birds",note:"A flamingo is a large tropical wading bird"},
+  {w:["COPPER","IRON","LEAD","MERCURY","BRONZE"],odd:4,link:"pure metallic elements",note:"Bronze is an alloy of copper and tin, not a pure element"},
+  {w:["AMAZON","NILE","GANGES","YANGTZE","EVEREST"],odd:4,link:"rivers",note:"Everest is a mountain, not a river"},
+  {w:["MARXISM","CAPITALISM","FEUDALISM","SOCIALISM","DEMOCRACY"],odd:4,link:"economic systems",note:"Democracy is a political system, not an economic one"},
+  {w:["IAMB","DACTYL","TROCHEE","SPONDEE","HAIKU"],odd:4,link:"metrical feet in poetry",note:"A haiku is a poem type, not a metrical foot"},
+],
+/* Day 15 */[
+  {w:["VIOLIN","CELLO","DOUBLE BASS","CLARINET","HARP"],odd:3,link:"string instruments",note:"A clarinet is a woodwind instrument"},
+  {w:["CHEETAH","LION","TIGER","JAGUAR","WOLF"],odd:4,link:"big cats",note:"A wolf is a canine — not a cat of any kind"},
+  {w:["BRAZIL","ARGENTINA","CHILE","PERU","MEXICO"],odd:4,link:"countries in South America",note:"Mexico is in North America"},
+  {w:["MARS","PLUTO","MERCURY","VENUS","EARTH"],odd:1,link:"planets in the solar system",note:"Pluto was reclassified as a dwarf planet in 2006"},
+  {w:["HELIUM","NEON","ARGON","KRYPTON","OXYGEN"],odd:4,link:"noble gases",note:"Oxygen is a highly reactive gas in Group 16, not a noble gas"},
+],
+/* Day 16 */[
+  {w:["PARIS","BERLIN","LONDON","NEW YORK","ROME"],odd:3,link:"capital cities",note:"New York is not a capital — Washington D.C. is the US capital"},
+  {w:["TENNIS","BADMINTON","SQUASH","TABLE TENNIS","FOOTBALL"],odd:4,link:"racket sports",note:"Football is played with the feet, not a racket"},
+  {w:["CHEDDAR","BRIE","GOUDA","FETA","BUTTER"],odd:4,link:"types of cheese",note:"Butter is a dairy spread, not a cheese"},
+  {w:["OSMOSIS","PHOTOSYNTHESIS","RESPIRATION","DIFFUSION","CAPITALISM"],odd:4,link:"biological processes",note:"Capitalism is an economic system"},
+  {w:["NEWTON","JOULE","WATT","PASCAL","DARWIN"],odd:4,link:"SI units of measurement",note:"The darwin is not an SI unit — Newton, Joule, Watt and Pascal all are"},
+],
+/* Day 17 */[
+  {w:["RATTLESNAKE","MAMBA","VIPER","ANACONDA","TORTOISE"],odd:4,link:"snakes",note:"A tortoise is a reptile but not a snake"},
+  {w:["TOKYO","BEIJING","SEOUL","DELHI","CAIRO"],odd:4,link:"capital cities in Asia",note:"Cairo is the capital of Egypt, in Africa"},
+  {w:["PLATINUM","GOLD","SILVER","DIAMOND","BRONZE"],odd:3,link:"metals",note:"Diamond is a form of carbon — it is not a metal"},
+  {w:["MARATHON","SPRINT","HURDLES","SHOT PUT","SWIMMING"],odd:4,link:"track and field athletics events",note:"Swimming is a separate aquatic sport, not track and field"},
+  {w:["ACHILLES","ODYSSEUS","HERCULES","HELEN","CAESAR"],odd:4,link:"figures from Greek mythology",note:"Julius Caesar was a historical Roman statesman, not a Greek mythological figure"},
+],
+/* Day 18 */[
+  {w:["JANUARY","MARCH","MAY","JULY","NOVEMBER"],odd:4,link:"months with 31 days",note:"November has only 30 days — January, March, May and July all have 31"},
+  {w:["PICASSO","MONET","WARHOL","DALI","BANKSY"],odd:4,link:"famous 20th-century painters",note:"Banksy is an anonymous contemporary street artist"},
+  {w:["BASS","TREBLE","ALTO","TENOR","ELECTRIC"],odd:4,link:"musical clefs or singing voice types",note:"Electric is an adjective for guitars — not a clef or singing voice"},
+  {w:["VENUS","JUPITER","SATURN","NEPTUNE","ORION"],odd:4,link:"planets in the solar system",note:"Orion is a constellation of stars, not a planet"},
+  {w:["CHOLERA","TYPHOID","MALARIA","MEASLES","DIABETES"],odd:4,link:"infectious diseases",note:"Diabetes is a non-infectious metabolic condition"},
+],
+/* Day 19 */[
+  {w:["TIGER","LION","LEOPARD","JAGUAR","HYENA"],odd:4,link:"big cats",note:"Hyenas belong to their own family — they are not cats"},
+  {w:["FRANCE","GERMANY","ITALY","SPAIN","SWITZERLAND"],odd:4,link:"European Union member states",note:"Switzerland is not an EU member"},
+  {w:["EVEREST","K2","KANGCHENJUNGA","LHOTSE","ETNA"],odd:4,link:"among the world's highest mountains",note:"Etna is a volcano in Sicily and far shorter than the others"},
+  {w:["VERB","NOUN","ADJECTIVE","ADVERB","METAPHOR"],odd:4,link:"parts of speech",note:"A metaphor is a figure of speech, not a grammatical part of speech"},
+  {w:["SEROTONIN","DOPAMINE","OXYTOCIN","GABA","INSULIN"],odd:4,link:"neurotransmitters or neuromodulators",note:"Insulin is a hormone produced by the pancreas, not a neurotransmitter"},
+],
+/* Day 20 */[
+  {w:["APPLE","PEAR","MANGO","BANANA","AVOCADO"],odd:4,link:"sweet fruits",note:"Avocado has a rich, fatty, savoury flavour — it is not a sweet fruit"},
+  {w:["MONDAY","TUESDAY","WEDNESDAY","FRIDAY","SATURDAY"],odd:4,link:"weekdays",note:"Saturday is a weekend day"},
+  {w:["VIOLIN","CELLO","PIANO","GUITAR","TROMBONE"],odd:4,link:"string instruments",note:"A trombone is a brass wind instrument"},
+  {w:["LION","BEAR","WOLF","TIGER","HORSE"],odd:4,link:"apex predators",note:"Horses are prey animals — they do not hunt"},
+  {w:["ATOM","MOLECULE","CELL","TISSUE","COUNTRY"],odd:4,link:"levels of biological organisation",note:"A country is a political concept, not a level of biological organisation"},
+],
+/* Day 21 */[
+  {w:["CHOCOLATE","VANILLA","STRAWBERRY","LEMON","CHEESE"],odd:4,link:"common ice cream flavours",note:"Cheese is not a traditional ice cream flavour"},
+  {w:["LONDON","PARIS","BERLIN","STOCKHOLM","SYDNEY"],odd:4,link:"European capital cities",note:"Sydney is in Australia"},
+  {w:["BEETHOVEN","BACH","HANDEL","VIVALDI","ELVIS"],odd:4,link:"classical composers",note:"Elvis Presley was a 20th-century rock and roll star"},
+  {w:["RECTANGLE","RHOMBUS","PARALLELOGRAM","TRAPEZOID","SPHERE"],odd:4,link:"quadrilaterals",note:"A sphere is 3D — the others are all flat, four-sided shapes"},
+  {w:["RIBOSE","GLUCOSE","FRUCTOSE","GALACTOSE","STARCH"],odd:4,link:"simple sugars (monosaccharides)",note:"Starch is a polysaccharide built from many sugar units — not a simple sugar"},
+],
+/* Day 22 */[
+  {w:["CRICKET","HOCKEY","TENNIS","GOLF","BADMINTON"],odd:4,link:"sports played with a ball",note:"Badminton uses a shuttlecock, not a ball"},
+  {w:["NILE","AMAZON","YANGTZE","MISSISSIPPI","ALPS"],odd:4,link:"rivers",note:"The Alps is a mountain range in Europe"},
+  {w:["LION","TIGER","LEOPARD","JAGUAR","CHEETAH"],odd:4,link:"big cats of the Panthera genus (that can roar)",note:"Cheetahs (Acinonyx jubatus) cannot roar and are not in the Panthera genus"},
+  {w:["MARX","DARWIN","EINSTEIN","NEWTON","SHAKESPEARE"],odd:4,link:"scientists",note:"Shakespeare was a playwright and poet — not a scientist"},
+  {w:["CARBON","HYDROGEN","OXYGEN","NITROGEN","PLASTIC"],odd:4,link:"chemical elements",note:"Plastic is a synthetic polymer compound, not a chemical element"},
+],
+/* Day 23 */[
+  {w:["PYTHON","COBRA","MAMBA","RATTLESNAKE","IGUANA"],odd:4,link:"snakes",note:"An iguana is a lizard"},
+  {w:["RUGBY","AMERICAN FOOTBALL","AUSSIE RULES","GAELIC FOOTBALL","TENNIS"],odd:4,link:"codes of football",note:"Tennis is a racket sport — not a form of football"},
+  {w:["CHEDDAR","GOUDA","BRIE","MOZZARELLA","SALAMI"],odd:4,link:"types of cheese",note:"Salami is a cured meat"},
+  {w:["BACH","BEETHOVEN","MOZART","HANDEL","LENNON"],odd:4,link:"classical composers",note:"John Lennon was a 20th-century rock musician"},
+  {w:["ALPHA","BETA","GAMMA","DELTA","TANGO"],odd:4,link:"letters of the Greek alphabet",note:"Tango is a dance (and the NATO code for T) — not a Greek letter"},
+],
+/* Day 24 */[
+  {w:["VENUS","MARS","JUPITER","SATURN","SUN"],odd:4,link:"planets",note:"The Sun is a star — not a planet"},
+  {w:["COPPER","IRON","ALUMINIUM","TIN","STEEL"],odd:4,link:"pure metallic elements",note:"Steel is an alloy of iron and carbon, not a pure element"},
+  {w:["PARIS","LONDON","ROME","AMSTERDAM","OTTAWA"],odd:4,link:"European capital cities",note:"Ottawa is the capital of Canada"},
+  {w:["LYMPHOCYTE","NEUTROPHIL","PLATELET","ERYTHROCYTE","NEURON"],odd:4,link:"types of blood cell or blood component",note:"A neuron is a nerve cell — not a blood cell"},
+  {w:["DOSTOEVSKY","TOLSTOY","TURGENEV","CHEKHOV","KAFKA"],odd:4,link:"Russian authors",note:"Franz Kafka was a Czech writer (writing in German)"},
+],
+/* Day 25 */[
+  {w:["TIGER","ELEPHANT","RHINO","PANDA","DINOSAUR"],odd:4,link:"endangered animals alive today",note:"Non-avian dinosaurs have been extinct for around 66 million years"},
+  {w:["TENNIS","BADMINTON","SQUASH","RACQUETBALL","BOWLING"],odd:4,link:"racket sports",note:"Bowling doesn't use a racket"},
+  {w:["NILE","THAMES","AMAZON","YANGTZE","KILIMANJARO"],odd:4,link:"rivers",note:"Kilimanjaro is a mountain in Tanzania"},
+  {w:["PROTON","NEUTRON","ELECTRON","QUARK","OXYGEN"],odd:4,link:"subatomic particles",note:"Oxygen is a chemical element composed of atoms — not a subatomic particle"},
+  {w:["MACBETH","HAMLET","OTHELLO","LEAR","TEMPEST"],odd:4,link:"Shakespeare tragedies",note:"The Tempest is a late romance/comedy — not a tragedy"},
+],
+/* Day 26 */[
+  {w:["ESPRESSO","LATTE","CAPPUCCINO","AMERICANO","BISCOTTI"],odd:4,link:"types of coffee drink",note:"Biscotti is an Italian biscuit served with coffee, not a coffee drink"},
+  {w:["THAMES","SEINE","DANUBE","RHINE","ANDES"],odd:4,link:"rivers in Europe",note:"The Andes is a mountain range in South America"},
+  {w:["MONET","MANET","DEGAS","RENOIR","DALI"],odd:4,link:"Impressionist painters",note:"Salvador Dalí was a Surrealist painter"},
+  {w:["VIRUS","BACTERIA","FUNGI","PARASITE","COMPUTER"],odd:4,link:"biological organisms that can cause disease",note:"A computer can get a virus but it is not a biological pathogen"},
+  {w:["SODIUM","POTASSIUM","CHLORIDE","CALCIUM","PLASTIC"],odd:4,link:"electrolytes or minerals found in the human body",note:"Plastic is a synthetic material — not a bodily mineral"},
+],
+/* Day 27 */[
+  {w:["CAT","DOG","PARROT","GOLDFISH","LION"],odd:4,link:"common household pets",note:"Lions are wild animals — not household pets"},
+  {w:["HAMLET","MACBETH","OTHELLO","PROSPERO","BATMAN"],odd:4,link:"Shakespearean characters",note:"Batman is a DC Comics superhero"},
+  {w:["PHOTOSYNTHESIS","RESPIRATION","OSMOSIS","DIGESTION","INFLATION"],odd:4,link:"biological processes",note:"Inflation is an economic concept, not a biological process"},
+  {w:["MARATHON","SPRINT","LONG JUMP","HIGH JUMP","SWIMMING"],odd:4,link:"track and field athletics events",note:"Swimming is a separate aquatic sport"},
+  {w:["NEWTON","CURIE","DARWIN","EINSTEIN","ARISTOTLE"],odd:4,link:"scientists of the modern era",note:"Aristotle was an ancient Greek philosopher (384–322 BC)"},
+],
+/* Day 28 */[
+  {w:["SQUARE","RECTANGLE","RHOMBUS","TRAPEZOID","PENTAGON"],odd:4,link:"quadrilaterals (4-sided shapes)",note:"A pentagon has 5 sides, not 4"},
+  {w:["FRANCE","GERMANY","SPAIN","ITALY","AUSTRALIA"],odd:4,link:"countries in continental Europe",note:"Australia is in the Southern Hemisphere"},
+  {w:["VIOLIN","GUITAR","PIANO","TRUMPET","CELLO"],odd:3,link:"string instruments",note:"A trumpet is a brass wind instrument"},
+  {w:["OSMIUM","GOLD","LEAD","PLATINUM","PLASTIC"],odd:4,link:"very dense metals and elements",note:"Plastic is a lightweight polymer — not a metal"},
+  {w:["KEYNESIAN","MONETARIST","MARXIST","BEHAVIOURAL","PROTESTANT"],odd:4,link:"schools of economic thought",note:"Protestantism is a branch of Christianity, not an economic theory"},
+],
+/* Day 29 */[
+  {w:["SHARK","DOLPHIN","WHALE","SEAL","TUNA"],odd:4,link:"marine mammals",note:"Tuna is a fish"},
+  {w:["ATHENS","SPARTA","CORINTH","THEBES","CAIRO"],odd:4,link:"ancient Greek city-states",note:"Cairo is in Egypt"},
+  {w:["COBALT","ROYAL","SKY","NAVY","CRIMSON"],odd:4,link:"shades of blue",note:"Crimson is a deep red"},
+  {w:["ADJECTIVE","ADVERB","CONJUNCTION","PREPOSITION","SIMILE"],odd:4,link:"parts of speech",note:"A simile is a figure of speech — not a grammatical term"},
+  {w:["SEROTONIN","DOPAMINE","MELATONIN","ADRENALINE","HAEMOGLOBIN"],odd:4,link:"hormones or neurotransmitters",note:"Haemoglobin is a protein in red blood cells that carries oxygen — not a hormone"},
+],
+/* Day 30 */[
+  {w:["ROSE","TULIP","LILY","DAFFODIL","IVY"],odd:4,link:"flowers",note:"Ivy is a climbing vine — it is not primarily known as a flower"},
+  {w:["CRICKET","RUGBY","POLO","LACROSSE","DARTS"],odd:4,link:"outdoor field sports",note:"Darts is an indoor pub game"},
+  {w:["COLOSSEUM","SPHINX","PARTHENON","PYRAMIDS","EIFFEL TOWER"],odd:4,link:"ancient structures (built before 1000 AD)",note:"The Eiffel Tower was built in 1889"},
+  {w:["PROTON","ELECTRON","NEUTRON","POSITRON","PHOTON"],odd:4,link:"matter particles (fermions)",note:"A photon is a force-carrying boson — it is not a matter particle"},
+  {w:["TOLSTOY","DOSTOEVSKY","CHEKHOV","TURGENEV","CAMUS"],odd:4,link:"Russian authors",note:"Albert Camus was a French-Algerian novelist"},
+],
+];
+
+/* ====== CONFIG ====== */
+const EPOCH = new Date(2026, 5, 13); // 13 June 2026 = Day 1
+
+/* ====== STORAGE ====== */
+const _m={};const _h=typeof window.storage!=="undefined";
+async function sGet(k){if(_h){try{const r=await window.storage.get(k);return r?r.value:null;}catch(e){return null;}}return _m[k]??null;}
+async function sSet(k,v){if(_h){try{await window.storage.set(k,v);}catch(e){}}else{_m[k]=v;}}
+
+/* ====== DATE ====== */
+function todayKey(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function dayIndex(){
+  const t=new Date();const ld=new Date(t.getFullYear(),t.getMonth(),t.getDate());
+  const e=new Date(EPOCH.getFullYear(),EPOCH.getMonth(),EPOCH.getDate());
+  const diff=Math.round((ld-e)/86400000);return((diff%30)+30)%30;
+}
+
+const DAY   = dayIndex();
+const DATE  = todayKey();
+const PUZ   = PUZZLES[DAY];
+const K_RES = "rogue-result-"+DATE;
+const K_PRG = "rogue-prog-"+DATE;
+const K_ST  = "rogue-stats";
+
+/* ====== STATE ====== */
+let currentRound = 0;
+let selectedTile = null;
+let results = [null,null,null,null,null]; // null|true|false
+let gameFinished = false;
+
+/* ====== DOM ====== */
+const progressBar = document.getElementById("progressBar");
+const roundLbl    = document.getElementById("roundLbl");
+const diffPill    = document.getElementById("diffPill");
+const tilesGrid   = document.getElementById("tilesGrid");
+const resultCard  = document.getElementById("resultCard");
+const resultVerdict = document.getElementById("resultVerdict");
+const resultBody  = document.getElementById("resultBody");
+const confirmBtn  = document.getElementById("confirmBtn");
+const nextBtn     = document.getElementById("nextBtn");
+const scoreDots   = document.getElementById("scoreDots");
+
+document.getElementById("dayBadge").textContent =
+  "Day #"+(DAY+1)+" · "+new Date().toLocaleDateString(undefined,{day:"numeric",month:"short"});
+
+/* ====== RENDER ====== */
+function renderProgress(){
+  progressBar.innerHTML="";
+  for(let i=0;i<5;i++){
+    const p=document.createElement("div");
+    p.className="pip";
+    if(results[i]===true) p.classList.add("right");
+    else if(results[i]===false) p.classList.add("wrong");
+    else if(i===currentRound) p.classList.add("active");
+    progressBar.appendChild(p);
+  }
+}
+
+function renderDots(){
+  scoreDots.innerHTML="";
+  for(let i=0;i<5;i++){
+    const d=document.createElement("div");
+    d.className="dot";
+    if(results[i]===true) d.classList.add("right");
+    else if(results[i]===false) d.classList.add("wrong");
+    scoreDots.appendChild(d);
+  }
+}
+
+function renderRound(idx){
+  const round=PUZ[idx];
+  roundLbl.textContent=`Round ${idx+1} of 5`;
+  diffPill.textContent=DIFF[idx];
+  selectedTile=null;
+  confirmBtn.disabled=true;
+  confirmBtn.style.display="block";
+  nextBtn.style.display="none";
+  resultCard.classList.remove("show");
+
+  tilesGrid.innerHTML="";
+  round.w.forEach((word,i)=>{
+    const btn=document.createElement("button");
+    const len=word.length;
+    btn.className="tile"+(len>=12?" xl":len>=8?" lg":"");
+    btn.textContent=word;
+    btn.onclick=()=>pickTile(i);
+    tilesGrid.appendChild(btn);
+  });
+
+  renderProgress();
+  renderDots();
+}
+
+function pickTile(idx){
+  if(gameFinished) return;
+  selectedTile=idx;
+  tilesGrid.querySelectorAll(".tile").forEach((t,i)=>{
+    t.classList.toggle("selected", i===idx);
+  });
+  confirmBtn.disabled=false;
+}
+
+/* ====== CONFIRM ====== */
+confirmBtn.onclick=async()=>{
+  if(selectedTile===null) return;
+  const round=PUZ[currentRound];
+  const correct=selectedTile===round.odd;
+  results[currentRound]=correct;
+
+  const tiles=tilesGrid.querySelectorAll(".tile");
+  tiles.forEach((t,i)=>{
+    t.classList.remove("selected");
+    t.classList.add("locked");
+    if(i===round.odd) t.classList.add("is-correct");
+    else if(i===selectedTile&&!correct) t.classList.add("is-wrong");
+    else t.classList.add("faded");
+  });
+
+  resultVerdict.textContent=correct?"Correct! ✓":"Not quite ✗";
+  resultVerdict.className="result-verdict "+(correct?"right":"wrong");
+  resultBody.innerHTML=`The four that match: <strong>${round.link}</strong><br>${round.w[round.odd]}: ${round.note}`;
+  resultCard.classList.add("show");
+
+  confirmBtn.style.display="none";
+  nextBtn.textContent=currentRound<4?"Next round →":"See my results";
+  nextBtn.style.display="block";
+
+  renderProgress();
+  renderDots();
+  await saveProgress();
+};
+
+nextBtn.onclick=async()=>{
+  if(currentRound>=4){
+    await finishGame();
+  } else {
+    currentRound++;
+    selectedTile=null;
+    renderRound(currentRound);
+  }
+};
+
+/* ====== PERSISTENCE ====== */
+async function saveProgress(){
+  await sSet(K_PRG,JSON.stringify({currentRound,results,gameFinished}));
+}
+
+async function finishGame(){
+  gameFinished=true;
+  const score=results.filter(r=>r===true).length;
+  await saveProgress();
+  const stats=await loadStats();
+  stats.played++;
+  stats.totalScore=(stats.totalScore||0)+score;
+  if(score===5) stats.perfect=(stats.perfect||0)+1;
+  await sSet(K_ST,JSON.stringify(stats));
+  await sSet(K_RES,JSON.stringify({results,score,date:DATE,day:DAY}));
+  showEnd(score,stats);
+}
+
+async function loadStats(){
+  const r=await sGet(K_ST);
+  try{return r?JSON.parse(r):{played:0,totalScore:0,perfect:0};}
+  catch(e){return{played:0,totalScore:0,perfect:0};}
+}
+
+/* ====== END SCREEN ====== */
+const TITLES={5:"Flawless! 🎯",4:"Sharp eye!",3:"Good spot!",2:"Getting there",1:"Rough day",0:"Off the mark"};
+const ICONS ={5:"🟢",4:"🔵",3:"🟡",2:"🟠",1:"🔴",0:"⚫"};
+
+function emojiLine(rs){return rs.map(r=>r===true?"✅":"❌").join("");}
+
+function showEnd(score,stats){
+  document.getElementById("mainWrap").style.display="none";
+  const p=document.getElementById("endPanel"); p.style.display="block";
+  document.getElementById("endTitle").textContent=TITLES[score]||"Done!";
+  document.getElementById("endSub").textContent=
+    score===5?"You spotted every rogue — perfect puzzle!":
+    score>=3?"You identified "+score+" out of 5 rogues.":
+    "You found "+score+" out of 5 today.";
+  document.getElementById("scoreBig").textContent=ICONS[score]+" "+score;
+  document.getElementById("emojiRow").textContent=emojiLine(results);
+  document.getElementById("stPlayed").textContent=stats.played;
+  document.getElementById("stWins").textContent=stats.perfect||0;
+  const avg=stats.played>0?((stats.totalScore||0)/stats.played).toFixed(1):"—";
+  document.getElementById("stAvg").textContent=avg;
+  startCountdown();
+}
+
+function startCountdown(){
+  const el=document.getElementById("countdown");
+  function tick(){
+    const now=new Date();
+    const mid=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1);
+    let s=Math.max(0,Math.floor((mid-now)/1000));
+    el.textContent=String(Math.floor(s/3600)).padStart(2,"0")+":"+String(Math.floor(s%3600/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");
+    if(s===0) location.reload();
+  }
+  tick();setInterval(tick,1000);
+}
+
+document.getElementById("copyBtn").onclick=()=>{
+  const score=results.filter(r=>r===true).length;
+  const txt="Rogue #"+(DAY+1)+" — "+score+"/5\n"+emojiLine(results);
+  const ta=document.createElement("textarea");
+  ta.value=txt;document.body.appendChild(ta);ta.select();
+  try{document.execCommand("copy");toast("Copied!");}
+  catch(e){toast("Couldn't copy");}
+  document.body.removeChild(ta);
+};
+
+function toast(msg){
+  const t=document.getElementById("toast");
+  t.textContent=msg;t.classList.add("show");
+  clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),1800);
+}
+
+/* ====== INIT ====== */
+(async function init(){
+  const doneRaw=await sGet(K_RES);
+  if(doneRaw){
+    try{
+      const r=JSON.parse(doneRaw);
+      results=r.results||[null,null,null,null,null];
+      currentRound=4; gameFinished=true;
+      // show last round state then end panel
+      const stats=await loadStats();
+      showEnd(r.score||0,stats);
+      document.getElementById("endSub").textContent="You've played today's Rogue. Come back tomorrow!";
+      return;
+    }catch(e){}
+  }
+  const progRaw=await sGet(K_PRG);
+  if(progRaw){
+    try{
+      const p=JSON.parse(progRaw);
+      currentRound=p.currentRound||0;
+      results=p.results||[null,null,null,null,null];
+      gameFinished=p.gameFinished||false;
+      if(gameFinished){
+        const stats=await loadStats();
+        const score=results.filter(r=>r===true).length;
+        showEnd(score,stats);
+        return;
+      }
+    }catch(e){}
+  }
+  renderRound(currentRound);
+})();
+</script>
+</body>
+</html>
