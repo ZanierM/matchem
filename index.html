@@ -1,14 +1,158 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Daily Games</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Hub</title>
+    <style>
+        /* Modern CSS Reset & Variables */
+        :root {
+            --bg-color: #0f172a; /* Cool dark slate background */
+            --card-bg: #1e293b; /* Slightly lighter slate for cards */
+            --text-main: #f8fafc; /* Crisp white text */
+            --text-muted: #94a3b8; /* Muted silver text */
+            --accent: #6366f1; /* Indigo accents */
+            --accent-hover: #4f46e5;
+            --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.8rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            letter-spacing: -0.025em;
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            margin-bottom: 50px;
+        }
+
+        /* Grid Layout for the 3 Games */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+        }
+
+        /* Card Styling */
+        .card {
+            background: var(--card-bg);
+            padding: 35px 25px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            border: 1px solid #334155;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent);
+            box-shadow: 0 20px 25px -5px rgba(99, 102, 241, 0.15);
+        }
+
+        .card-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.2));
+        }
+
+        .card h3 {
+            margin: 10px 0;
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+
+        .card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin-bottom: 28px;
+            flex-grow: 1;
+        }
+
+        /* Button Styling */
+        .btn {
+            display: inline-block;
+            background-color: var(--accent);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: background-color 0.2s ease;
+            width: 80%;
+            box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn:hover {
+            background-color: var(--accent-hover);
+        }
+    </style>
 </head>
 <body>
-    <h1>My HTML Files</h1>
-    <ul>
-        <li><a href="matchem.html">Go to Page 1</a></li>
-        <li><a href="shroud.html">Go to Page 2</a></li>
-        <li><a href="rogue.html">Go to Page 3</a></li>
-    </ul>
+
+    <div class="container">
+        <header>
+            <h1>Arcade Dashboard</h1>
+            <p>Select a game below to start playing instantly.</p>
+        </header>
+
+        <main class="grid">
+            <!-- Card 1: Match Em -->
+            <div class="card">
+                <div class="card-icon">🧩</div>
+                <h3>Match Em</h3>
+                <p>Test your memory and speed. Match all the pairs before time runs out!</p>
+                <a href="page1.html" class="btn">Play Game</a>
+            </div>
+
+            <!-- Card 2: Shroud -->
+            <div class="card">
+                <div class="card-icon">🥷</div>
+                <h3>Shroud</h3>
+                <p>Step into the shadows. A tactical mystery game where stealth is your best friend.</p>
+                <a href="page2.html" class="btn">Play Game</a>
+            </div>
+
+            <!-- Card 3: Rogue -->
+            <div class="card">
+                <div class="card-icon">⚔️</div>
+                <h3>Rogue</h3>
+                <p>An unpredictable dungeon crawler. Fight enemies, collect loot, and see how far you survive.</p>
+                <a href="page3.html" class="btn">Play Game</a>
+            </div>
+        </main>
+    </div>
+
 </body>
 </html>
