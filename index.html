@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Hub</title>
+    <title>Daily Games</title>
     <style>
         /* Modern CSS Reset & Variables */
         :root {
@@ -31,12 +31,12 @@
 
         .container {
             width: 100%;
-            max-width: 900px;
+            max-width: 1000px;
             text-align: center;
         }
 
         header h1 {
-            font-size: 2.8rem;
+            font-size: 3rem;
             font-weight: 800;
             margin-bottom: 10px;
             letter-spacing: -0.025em;
@@ -54,7 +54,7 @@
         /* Grid Layout for the 3 Games */
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 24px;
         }
 
@@ -86,7 +86,7 @@
 
         .card h3 {
             margin: 10px 0;
-            font-size: 1.4rem;
+            font-size: 1.5rem;
             font-weight: 700;
             letter-spacing: -0.01em;
         }
@@ -94,7 +94,7 @@
         .card p {
             color: var(--text-muted);
             font-size: 0.95rem;
-            line-height: 1.5;
+            line-height: 1.6;
             margin-bottom: 28px;
             flex-grow: 1;
         }
@@ -123,33 +123,33 @@
 
     <div class="container">
         <header>
-            <h1>Arcade Dashboard</h1>
-            <p>Select a game below to start playing instantly.</p>
+            <h1>Daily Games</h1>
+            <p>Your daily dose of puzzles. Choose a challenge below!</p>
         </header>
 
         <main class="grid">
             <!-- Card 1: Match Em -->
             <div class="card">
-                <div class="card-icon">🧩</div>
+                <div class="card-icon">🔀</div>
                 <h3>Match Em</h3>
-                <p>Test your memory and speed. Match all the pairs before time runs out!</p>
-                <a href="page1.html" class="btn">Play Game</a>
+                <p>A connections-style puzzle game. Find the underlying patterns and group the related items together!</p>
+                <a href="matchem.html" class="btn">Play Game</a>
             </div>
 
             <!-- Card 2: Shroud -->
             <div class="card">
-                <div class="card-icon">🥷</div>
+                <div class="card-icon">🔍</div>
                 <h3>Shroud</h3>
-                <p>Step into the shadows. A tactical mystery game where stealth is your best friend.</p>
-                <a href="page2.html" class="btn">Play Game</a>
+                <p>One mystery answer per day. Clue 1 is shown immediately—guess it cold for a perfect 5/5. Tap "Next clue →" or guess wrong to unlock the next clue as your score drops. Wrong on the final clue? Game over.</p>
+                <a href="shroud.html" class="btn">Play Game</a>
             </div>
 
             <!-- Card 3: Rogue -->
             <div class="card">
-                <div class="card-icon">⚔️</div>
+                <div class="card-icon">🕵️‍♂️</div>
                 <h3>Rogue</h3>
-                <p>An unpredictable dungeon crawler. Fight enemies, collect loot, and see how far you survive.</p>
-                <a href="page3.html" class="btn">Play Game</a>
+                <p>Each round shows five words. Tap the one that doesn't belong and lock it in. The answer and connection are immediately revealed, meaning you learn something new every round even if you miss it!</p>
+                <a href="rogue.html" class="btn">Play Game</a>
             </div>
         </main>
     </div>
